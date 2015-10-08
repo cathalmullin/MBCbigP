@@ -1,0 +1,607 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[margin=0.8in]{geometry}
+\usepackage{natbib}
+\usepackage{epsf}
+\usepackage{hyperref}
+\usepackage{epsfig}
+\usepackage{multirow}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{enumitem}
+\usepackage{babel}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{multicol}
+\usepackage{rotating}
+\usepackage{xcolor}
+\usepackage{sectsty}
+\usepackage{subfig}
+\usepackage{caption}
+\usepackage{fancyvrb}
+\usepackage{empheq}
+
+
+\renewcommand{\baselinestretch}{1.3}
+\newcommand{\btau}{\mbox{\boldmath{$\tau$}}}
+\newcommand{\bnu}{\mbox{\boldmath{$\nu$}}}
+\newcommand{\balpha}{\mbox{\boldmath{$\alpha$}}}
+\newcommand{\bmu}{\mbox{\boldmath{$\mu$}}}
+\newcommand{\btheta}{\mbox{\boldmath{$\theta$}}}
+\newcommand{\bbeta}{\mbox{\boldmath{$\beta$}}}
+\newcommand{\bzeta}{\mbox{\boldmath{$\zeta$}}}
+\newcommand{\bLambda}{\mbox{\boldmath{$\Lambda$}}}
+\newcommand{\bkappa}{\mbox{\boldmath{$\kappa$}}}
+\newcommand{\brho}{\mbox{\boldmath{$\rho$}}}
+\newcommand{\bSigma}{\mbox{\boldmath{$\Sigma$}}}
+\newcommand{\bOmega}{\mbox{\boldmath{$\Omega$}}}
+\newcommand{\biota}{\mbox{\boldmath{$\iota$}}}
+
+%\DeclareMathSizes{display size}{text size}{script size}{scriptscript size}
+\DeclareMathSizes{16}{14}{14}{14}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{-1em}
+
+\definecolor{darkpink}{RGB}{217,30,99}
+\definecolor{darkcharcoal}{RGB}{38,38,38}
+
+\pagestyle{fancy}
+
+\begin{document}
+\sectionfont{\color{darkpink}} 
+\chapterfont{\color{darkpink}} 
+%-----------------------------------------------------------------------------------------------------
+%  HEADER
+%-----------------------------------------------------------------------------------------------------
+% clear any old style settings
+% define new headers/footers
+\renewcommand{\headrulewidth}{.4mm}
+\renewcommand{\headrule}{\hbox to\headwidth{%
+  \color{darkpink}\leaders\hrule height \headrulewidth\hfill}}
+\fancyhead{}
+\fancyfoot{}
+\lhead{MBCbigP}
+%\rhead{Support Vector Machines}
+\rfoot{\thepage}
+%---------------------------------------------------------------------------------------------------
+%  TITLE PAGE
+%---------------------------------------------------------------------------------------------------
+\begin{titlepage}
+\thispagestyle{plain}
+\pagenumbering{gobble}
+\center
+%---------------------------------------------------------------------------------------------------
+%	HEADING SECTIONS
+%---------------------------------------------------------------------------------------------------
+\vspace*{1cm}
+%\textsc{\Huge University College Dublin}\\[1cm] 
+%\textsc{\Huge Data Mining (STAT40590)}\\[2cm]
+%--------------------------------------------------------------------------------------------------
+%	TITLE SECTION
+%--------------------------------------------------------------------------------------------------
+%\HRule \\[4cm]
+\textcolor{darkpink}{\rule{\linewidth}{0.75mm}}\\[1cm]
+%\resizebox{\linewidth}{25pt}{\itshape Support Vector Machines}\\[.42cm]
+\textcolor{darkpink}{\rule{\linewidth}{0.75mm}}\\[4cm]
+%\HRule \\[4cm]
+
+%---------------------------------------------------------------------------------------------------
+%	AUTHOR SECTION
+%---------------------------------------------------------------------------------------------------
+%\emph{\Large Author:}\\
+%\Large Cathal \textsc{\Large Mullin}\\[0.5cm]
+%\emph{\Large Student Number:}\\
+%\Large{14202788}\\[2cm]
+%---------------------------------------------------------------------------------------------------
+%	DATE SECTION
+%---------------------------------------------------------------------------------------------------
+{\Large \today}\\[2cm] 
+\vfill % Fill the rest of the page with whitespace
+\end{titlepage}
+\newpage
+
+<<include=FALSE>>=
+library(knitr)
+opts_knit$set(out.format = "latex")
+knit_theme$set("edit-vim")
+knit_theme$get()
+thm = knit_theme$get("moe")  # parse the theme to a list
+knit_theme$set(thm)
+@
+\thispagestyle{fancy}
+\setcounter{page}{1}
+\pagenumbering{arabic}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Data}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The data set contains six measurements made on 100 genuine and 100 counterfeit old Swiss 1000 franc bank notes.
+
+\begin{itemize}[noitemsep]
+  \item[--] \textbf{\textit{Status}} --- the status of the banknote: genuine or counterfeit
+  \item[--] \textbf{\textit{Length}} --- Length of bill (mm)
+  \item[--] \textbf{\textit{Left}} --- Width of left edge (mm)
+  \item[--] \textbf{\textit{Right}} --- Width of right edge (mm)
+  \item[--] \textbf{\textit{Bottom}} --- Bottom margin width (mm)
+  \item[--] \textbf{\textit{Top}} --- Top margin width (mm)
+  \item[--] \textbf{\textit{Diagonal}} --- Length of diagonal (mm)
+\end{itemize}
+
+\section{Mclust}
+\vspace{-0.75cm}
+<<eval=TRUE,message=FALSE,tidy=TRUE>>=
+#incude packages
+library(mclust)
+data(banknote)
+#Ellipsoidal, varying volume, shape, and orientation 
+system.time(res<-Mclust(banknote[,-1],2,"VVV"))
+#assess the classification 
+table(res$cl,banknote[,1])
+#mclust correctly classifies all but one of the observations
+@
+\clearpage
+\section{Methodology}
+\subsection{Introduction}
+\vspace{.5cm}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Traditional MBC has computational problems when the number of variables (p) is very large. Memory contraints are encountered. The proposed method attempts to lessen this problem instead of fitting a single EM algorithm on all of the variables at once, by working dividing the variables into batches. Separate EM models are fitted to each of the batches, the starting values for each batch have been determined by the previous batches. MBCbig P is approximating the problem recursively. The advantage of this approach is that is a lot more memory efficient. Don't need to try and store these really big objects.
+    }%
+}
+
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Notation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{.5cm}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+$\eta$ mixing proportions --- population MLE probabilities of belonging to group g\\    
+$y$ is the data\\
+$z$ are the latent variables, indicating group membership\\
+$\theta$ is the set of parameters that are relevent\\
+$\mu$ is the vector of means\\
+$\Sigma$ is the covariance matrix\\
+$g$ is the number of groups\\
+$n$ is the number of data points
+    }%
+}
+\vspace{.25cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Definition}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Initilise data $p=4$. Let $a=(1,2)$ \& $b=(3,4)$\\
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Specify the data. Data had 4 variables 1:4. Group a is for variable 1 \& 2 and group b is for variable 3 \& 4
+    }%
+}
+\begin{align*}
+f \left(y_{i} \right) &= \sum_{g=1}^{2}\eta_{g} f \left(y_{i}|\mu_{g}, \Sigma_{g} \right)\\
+f \left[ \left( y_{a}, y_b\right)^{T} \right] &= \sum_{g=1}^2 \eta_g f \left[\left( y_a, y_b\right)^T | \left( \mu_{ga}, \mu_{gb} \right)^T \right] \left(
+\begin{array}{cc}
+\Sigma_{gaa} & \Sigma_{gab}\\
+\Sigma_{gba} & \Sigma_{gbb} \\
+\end{array} \right)
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+First is the standard form of the function, second is the form of the alternative proposed, where there are parameters for the two groups: two sets of data, two means, and the covariance matrix will be 2x2, with variances and covariances
+    }%
+}
+\begin{equation} \text{Also} \hspace{5mm}
+\Lambda_{g}=\Sigma_{g}^{-1}=\left( \begin{array}{cc}
+\Lambda_{ga} & \Lambda_{gab}\\
+\Lambda_{gba} & \Lambda_{gb} \\
+\end{array} \right) 
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Using $\Lambda$ to represent the inverse of the covariance matrix
+    }%
+}
+\begin{equation}
+\text{Note} \hspace{5mm} \Lambda_{gba}=\Lambda^{T}_{gab}\\
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Just one of those matrix results from the Matrix Cookbook etc.
+    }%
+}
+\begin{equation}
+\text{We have} \hspace{5mm} f_{g} \left[ \left( y_{a}, y_{b} \right)^T \right] = f_g \underbrace{\left[ y_{a} | y_{b} \right]}_{N \left( \mu_{ga|b}, \Lambda_{gaa}^{-1} \right)} f_{g} \underbrace{\left[ y_b\right]}_{N\left(\mu_{b}, \Sigma_{gbb} \right)}
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+This is a joint probability distribution property for random variables can be written as the product of the product of the conditional distribution and the marginal distribution. Both of these are normally distributed.
+    }%
+}
+\begin{align*}
+\text{Where} \hspace{5mm} \mu_{ga|b} &= \mu_{ga} - \Lambda_{ga}^{-1} \Lambda_{gab} \left(y_{b} - \mu_{gb} \right) \\
+\Lambda_{g}^{-1} &= \Sigma_{ga} - \Sigma_{gab} \Sigma_{gb}^{-1} \Sigma_{gba}
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+These are results from working with block matrices. Definition of the conditional mean and conditional variance.
+    }%
+}
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Batch A}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Say that the data is divided into three batches A, B \& C
+    }%
+}
+<<eval=TRUE,message=FALSE,tidy=TRUE>>=
+#define the batches
+BatchA<-banknote[,2:3]
+BatchB<-banknote[,4:5]
+BatchC<-banknote[,6:7]
+@
+
+So for batch A of the variables we have:
+\begin{equation}
+L = p \left( y_{A} | \eta, \theta \right) = \prod_{i=1}^N \sum_{g=1}^{2} \eta_{g} p \left(y_{iA}| \theta_{g}\right), \text{where} \hspace{5mm} \theta_{g} =\left\{ \mu_{g}, \Sigma_{g} \right\}
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+We have a density function $p \left( y_{A} | \eta, \theta \right)$ that is governed by the set of parameters(e.g. mean and covariances for Gaussians). We also have a data set of size N, supposedly drawn from this distribution.Assume that these data vectors are independent and
+identically distributed with distribution p. Therefore, the resulting density for the samples
+    }%
+}
+\begin{equation}
+\text{Accounting for missing $z_{i}$'s}\hspace{5mm} \left( z_{i} = \left( z_{i1}, z_{i2} \right) \& z_{ig} = \left\{1, 0 \right\} \right)
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Optimizing the likelihood function is analytically intractable. The likelihood function can be simplified by assuming the existence of and latent parameters. Here this parameter is defined $z$ The zs are treated as the `missing' data and are indicator variables
+indicating the group membership of each of the N observations i.e. if G is the total number of groups present where
+$z_{ig}$ = \{1 if observation i belongs to group g, 0 otherwise\}
+    }%
+}
+\begin{align*}
+L_{c} \left( \theta, \eta | y_{a} z \right) &= p \left( y_{a}z|\eta,\theta \right)\\
+&=\prod_{i=1}^{N} \prod_{g=1}^{2} \left[ \eta_g p \left( y_{iA}| \theta_{g} \right) \right]^{z_{ig}}
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Likelihood of the parameters given the data, or just the likelihood function. The likelihood is thought of as a function of the parameterswhere the data y is fixed. In the maximum likelihood problem, our goal is to find the parameters that maximizes L. 
+    }%
+}
+\subsubsection*{Initialize}
+$\eta^{\left(0 \right)}$ \& $\theta^{\left(0 \right)}$ Let $t=0$\\
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Need to specify starting values for the mixing proportions and for the parameters values
+    }%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{E-Step: Compute}
+\begin{align*}
+\hat{z_{ig}^{\left(t \right)}} &= \frac{\eta^{\left(t \right)}_{g1}p\left(y_{iA}|\theta_{g}^{\left(t \right)_{g}}\right)}{p\left(y_{i}|\theta_{G}\right)}\hspace{2mm} \text{Bayes rule}\\ 
+&= \frac{\eta_{g}^{\left(t\right)} p \left(y_{iA}|\theta_{g}^{\left(t \right)} \right)}{\sum_{g=1}^{G}  \eta_{g1}^{\left(t\right)} p \left( y_{iA} | \theta_g^{\left(t \right)}\right)} \hspace{5mm} i=1,\ldots,N \hspace{2mm}\& \hspace{2mm} g=1,2
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+here the expected value of the missing data, conditional on the observed data and all current parameter estimates, is computed. This is just the probability of of one group over the total probability.
+    }%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{M-Step: Maximize}
+\begin{equation}
+l_c \left(\theta, \eta | y,z \right) = \sum_{i=1}^{N} \sum_{g=1}^{2} \hat{z}_{ig}^{\left(t \right)} \left[\log \eta_g + \log p \left(y_{iA} | \theta_{g} \right) \right]
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+here the expected complete data log likelihood is maximized with respect to the parameters. $\eta$ and $\theta$ are unrelated they can be worked out separately. as going to be using multivariate normal distribution the these parameters that need to be estimated are $\mu$ $\Sigma$ 
+    }%
+}
+\begin{equation}
+\frac{\partial}{\partial \eta_{g}} \left[ \sum_{i=1}^{N} \sum_{g=1}^{G} log\left(\eta_{g} \right)z_{ig}+\lambda \left(\sum_{g} \eta_{g} -1 \right) \right] = 0
+\end{equation}
+
+\begin{equation}
+\sum_{i=1}^{N} \frac{1}{\eta_g}z_{ig}+\lambda=0 \hspace{5mm} \text{summing both sides, $\lambda = -N$}
+\end{equation}
+
+\[
+\text{to yield} \hspace{5mm} \eta_g^{\left(t+1\right)} = \frac{\sum_{i=1}^{N} \hat{z}_{ig}^{\left(t\right)}}{N}
+\]
+
+
+\begin{equation}
+ p(y|\mu,\Sigma)=\frac{1}{\sqrt{(2\pi)^{n}|\Sigma|}}exp(-\frac{1}{2}(y_{i}-\mu)'\Sigma^{-1}(y_{i}-\mu))
+\end{equation}
+ \noindent\fbox{%
+    \parbox{\textwidth}{%
+Need to redo the indices and the subscripts in this section. Need to show some of the matrix operations that are needed
+    }%
+}
+
+\begin{equation}
+\sum_{i=1}^{N} \sum_{g=1}^{G} \left(\frac{1}{2}\log\left(\Sigma \right)-\frac{1}{2}\left(y_i - \mu_i\ \right)^T\Sigma^{-1}\left(y_i-\mu_i \right) \right)z_i
+\end{equation}
+Take the derivative with respect to $\mu$ and set equal to zero get
+\begin{equation}
+\sum_{i=1}^{N}\Sigma^{-1}\left(y_i-\mu \right)zi=0
+\end{equation}
+
+\begin{equation}
+\text{solve for $\mu$} \hspace{5mm}  \mu_g^{\left(t+1\right)} = \frac{\sum_{i=1}^{N} \hat{z}_{ig}^{\left(t \right)} y_{iA}}{\sum_{i=1}^{N} \hat{z}_{ig}^{\left(t \right)}}\\
+\end{equation}
+
+Want to find $\Sigma$
+\begin{equation}
+\sum_{i=1}^N \left[\frac{1}{2}\log \left(\Sigma^{-1} \right) \sum_{g=1}^{G} z_{ig} - \frac{1}{2}\sum_{g=1}^{G}z_{ig}tr\left(\Sigma^{-1} \left(y_i-\mu \right)\left(y_i-\mu_g \right)^T \right)  \right]
+\end{equation}
+Take derivative with respect to $\Sigma_{g}$
+
+\begin{equation}
+\frac{1}{2}\sum_{n=1}^{N} z_{ig} \left(2\Sigma-diag\left(\Sigma \right) \right) - \frac{1}{2}\sum_{i=1}^N z_{ig}\left(2 \left(y_i-\mu \right)\left(y_i-\mu_g \right)^T - diag\left(y_i-\mu \right)\left(y_i-\mu_g \right)^T\right) 
+\end{equation}
+
+\begin{equation}
+=\frac{1}{2}\sum_{i=1}^{N} z_{ig} \left(2\Sigma - \left(y_i-\mu \right)\left(y_i-\mu_g \right)^T - diag\left(\Sigma - \left(y_i-\mu \right)\left(y_i-\mu_g \right)^T \right)  \right)
+\end{equation}
+
+Setting the derivative equal to zero implies
+\begin{equation}
+\sum_{i-1}^N z_{ig} \left(\Sigma - \left(y_i-\mu \right)\left(y_i-\mu_g \right)^T \right)  = 0
+\end{equation}
+
+\begin{equation}
+\Sigma_{g}^{\left(t + 1 \right)} = \frac{\sum_{i=1}^{N} \hat{z}_{ig}^{\left(t \right)} \left[ y_{iA} - \mu_{g}^{\left(t+1\right)} \right] \left[ y_{iA} - \mu_{g}^{\left(t+1\right)} \right]^T}{\sum_{i=1}^n \hat{z}_{ig}^{\left(t \right)}}
+\end{equation}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Compute the parameter estimates by differenting with respect to each of the parameters set to zero and solve.
+The estimates of the new parameters are in terms of the old parameters. These equations for the parameters perform both the expectation step and the maximization step simultaneously. The algorithm proceeds by using the newly derived parameters as the guess for the next iteration.
+    }%
+}
+\vspace{2cm}
+It is computationally cheaper to express in terms of the conditional expectations of the sufficent statistics $T_{i1}$, $T_{i2}$ and $T_{i3}$ given by
+\begin{align*}
+  S_{g1}^{\left(t\right)} & = \sum_{i=1}^{n} \hat{z}_{ig}^{\left(t\right)}\hspace*{3em}\\
+  S_{g2}^{\left(t\right)} & = \sum_{i=1}^{n} \hat{z}_{ig}^{\left(t\right)} y_{iA} \hspace*{3em} \\
+  \text{both of which are used in}
+  S_{g3}^{\left(t\right)}  & = \sum_{i=1}^{n} \hat{z}_{ig}^{\left(t\right)} y_{iA}y_{iA}^T
+\end{align*}
+ \noindent\fbox{%
+    \parbox{\textwidth}{%
+Compute sufficient statistics e.g. $\Pr(x|t,\theta) = \Pr(x|t).$
+    }%
+}
+ 
+\begin{equation}
+\text{where} \sum_{g}^{\left(t+1 \right)} = \frac{ \left\{S_{g3}^{\left(t \right)} - S_{g1}^{\left(t \right)-1}S_{g2}^{\left(t \right)}S_{gs}^{\left(t \right)^{T}}\right\}}{S_{g1}^{t}} \hspace*{3em} g=1,2
+\end{equation}
+ \noindent\fbox{%
+    \parbox{\textwidth}{%
+Compute $\Sigma$ from the sufficient statistics. This speeds up the calculations as these numbers can be substituted instead of working out the formula again.
+    }%
+}
+A ``convergence'' we have $\eta_g^{\left(A \right)}$, $\mu_g^{A}$ \& $\Sigma_{g}^{\left(A \right)}$ \& $p\left(y_{iA}| \theta_{g}^{\left(A \right)} \right) \text{for g=1,2}$\\
+ \noindent\fbox{%
+    \parbox{\textwidth}{%
+ at the end of Batch A have estimates for the parameters for Batch A and the likihood for batch A
+    }%
+}
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Batch B}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+For Batch B of the variables we have have:\\
+ \noindent\fbox{%
+    \parbox{\textwidth}{%
+Batch B is very similar to Batch A, but now everything for B is going to be conditional on A
+    }%
+}
+\begin{align*}
+L_{c}\left(\theta,\eta|\left(y_{A}, y_{B}\right),z \right) &= p \left(y_{A}, y_{B}, z | \eta, \theta \right)\\
+&=\prod_{i=1}^{N} \prod_{g=1}^{2} \left[\eta_g p \left(y_{iA}, y_{iB} | \theta_g \right) \right]^{zig}\\
+&=\prod_{i=1}^{N} \prod_{g=1}^{2} \left[\eta_g p \left(y_{iB}|y_{iA},\theta_{g} \right) p \left(y_{iA}|\theta_{g} \right) \right]^{zig}
+\end{align*}
+ \noindent\fbox{%
+    \parbox{\textwidth}{%
+complete data log likelihood 
+    }%
+}
+\[
+\text{Note that now} \hspace{5mm}
+\theta_{g} = \left(\theta_{gA}, \theta_{gB} \right) = \left\{
+\left(\begin{array}{c}
+\mu_{gA} \\
+\mu_{gB} \end{array} \right)
+\left(\begin{array}{cc}
+\Sigma_{gA} & \Sigma_{gBA} \\
+\Sigma_{gAB} & \Sigma_{gB}\end{array}\right)
+\right\}
+\]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Initialize}
+Set \hspace{5mm} $\eta^{\left(0\right)}_{g}=\eta_{g}^{A}, \text{g=1,$\ldots$,G,let t=0}$\\
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+for this batch will need to actually compute estimates for the parameters rather than just specifying the initiliasation values. Going to be using the information on for Batch A for Batch B which hopefully will act as very good starting values
+    }%
+}
+\[
+\mu_{g}^{\left(0\right)}=\left(\mu_{gA}, \mu_{gB} \right)^{\left(0 \right)}=\left(\mu_{gA}^{\left(A \right)},y_{gB} \right)
+\]
+\[\Sigma_{g}^{\left(0 \right)}=
+\left(\begin{array}{cc}
+\Sigma_{gA}^{\left(A\right)} & \text{Cov} \left(y_{gA},y_{gB} \right) \\
+\text{Cov} \left(y_{gA}, y_{gB} \right) & \text{Cov} \left( y_{gB}\right)\end{array}\right)
+\]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{E-Step: Compute}
+\begin{align*}
+\hat{z}_{ig}^{\left(t \right)} &= \frac{ \eta_{g}^{\left(t \right)}p \left(y_{iA}, y_{iB}| \theta_{g}^{\left(t \right)} \right)}{\sum_{g=1}^{G} \eta_{g}^{\left(t \right)} p \left(y_{iA},y_{iB} | \theta_{g}^{\left(t \right)} \right)} \text{i=1, $\ldots$, N g=1,2}\\
+&=\frac{\eta_{g}^{\left(t \right)} p \left(y_{iB}|y_{iA}, \theta_{g}^{\left(t \right)} \right) p \left( y_{iA}| \theta_{g}^{\left( A \right)} \right)}{\sum_{g=1}^{G}\eta_{g}^{\left(t \right)} p \left(y_{iB}|y_{iA}, \theta_{g}^{\left(t \right)} \right) p \left( y_{iA}| \theta_{g}^{\left( A \right)} \right)}
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+    Again probability over total probability, second equation is rewriting using probability rules
+    }%
+}
+\[
+\text{where} \hspace{5mm}
+p \left(y_{iB}|y_{iA}, \theta_{g}^{\left(t \right)} \right) \sim \text{MVN} \left(\mu_{gB|A}, \Lambda_{gB}^{-1} \right) 
+\]
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+    Going to assume that the distribution is normally with those parameters
+    }%
+}
+\begin{align*}
+\mu_{gB|A} &= \mu_{gB} - \Lambda_{gB}^{-1} \Lambda_{gBA} \left(y_{iA} -\mu_{gA} \right)\\
+\Lambda_{gB}^{-1} &= \Sigma_{gB} - \Sigma_{gBA} \Sigma_{gA}^{-1}\Sigma_{gAB} \hspace{5mm} \text{(use plug estimates)}
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Need to compute the covariances between Batch A and Batch B, could just work out the covariance of the batch and use this as an estimate
+    }%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{M-Step Maximize}
+\begin{align*}
+l_{c} \left(\theta, \eta | \left( y_{A}, y_{B}\right), z \right) &= \sum_{i=1}^{N} \sum_{g=1}^{2}\hat{z}_{ig}^{\left(t \right)} \left[ \log \eta_{g} + \log p \left( \left(y_{iA}, y_{iB} \right) | \theta_{g}\right) \right] \\
+\text{to yield}  \hspace{5mm} \eta_{g}^{\left(t+1 \right)} &= \frac{ \sum_{i=1}^N \hat{z}_{ig}^{\left(t\right)}}{N}\\
+\mu_{gB}^{\left(t+1 \right)} &= \frac{\sum_{i=1}^{N} \hat{z}_ig^{\left(t \right)}y_{iB}}{\sum_{i=1}^{N} \hat{z}_{ig}^{\left(t \right)}}\\
+\Sigma_{gB}^{\left(t+1\right)}&=\frac{\left\{S_{g3}^{\left(t \right)}-S_{g1}^{\left(t \right)-1} S_{g2}^{\left(t \right)} S_{g2}^{\left(t \right)T}\right\}}{S_{g1}^{\left(t \right)}}\hspace{5mm} \text{g=1,2}\\
+\text{where} \hspace{5mm} \\
+S_{g1}^{\left(t \right)} &= \sum_{i=1}^n \hat{z}_{ig}^{\left(t \right)}\\
+S_{g2}^{\left(t \right)} &= \sum_{i=1}^n \hat{z}_{ig}^{\left(t \right)}y_{iB}\\
+S_{g3}^{\left(t \right)} &= \sum_{i=1}^n \hat{z}_{ig}^{\left(t \right)}y_{iB}y_{iB}^{T}
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Want to compute new parameters for this Batch. Will be interesting to see how much the parameters are changing over the batches. Again look at the sufficnient statistics in order to calculate $\Sigma$ efficiently
+    }%
+}%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection*{Convergence}
+\[
+\eta_g^{\left(B \right)}, \mu_{g}^{\left(B \right)}, \Sigma_{g}^{\left(B \right)}\hspace{2mm} \&\hspace{2mm}  p  \left(y_{iB}|y_{iA},\theta_g^{\left(B\right)} \right) \hspace{5mm} g=1,2
+\]
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+After this step will have estimates for the parameters from batch B, the probability will depend on Batch A
+    }%
+}
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Batch C}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Batch C again very similar just the probabilities depend on Batch A and Batch B the data and the parameter estimates
+    }%
+}
+\begin{align*}
+L_{c}{\theta, \eta | \left( y_{1}, y_{B}, y_{C}\right)} &= p \left(y_{A}, y_{B}, y_{C}, z | \theta, \eta \right)\\
+&= \prod_{i=1}^{n} \prod_{g=1}^2 \left[\eta_{g} p \left(y_{iA},y_{iB}, y_{iC}| \theta_{g} \right)\right]^{z_{ig}}
+\end{align*}
+
+\[
+\text{Note that now} \hspace{5mm}
+\theta_{g} = \left\{
+\left(\begin{array}{c}
+\mu_{gAB} \\
+\mu_{gC} \end{array} \right)
+\left(\begin{array}{cc}
+\Sigma_{gAB} & \Sigma_{gCAB} \\
+\Sigma_{gABC} & \Sigma_{gC}\end{array}\right)
+\right\}
+\]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Initialize}
+\[
+\text{Set} \hspace{5mm} \eta_{g}=\eta_{g}^{\left(B \right)}  \hspace{5mm} g=1,\ldots,G \hspace{5mm} t=0
+\]
+
+\[
+\mu_{g}^{\left(0 \right)}=\left(\mu_{g}^{\left(B\right)}, \bar{y}_{gC}\right)
+\]
+
+\[
+\Sigma_{g}^{\left(0\right)}=
+\left[\begin{array}{cc}
+\Sigma_{gAB}^{\left(B \right)} & Cov\left(y_{gAB}, y_{gC} \right) \\
+Cov \left(y_{gAB},y_{gC} \right) & Cov\left(y_{gC} \right)\end{array}\right]
+\]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{E-Step compute}
+\[
+\hat{z}_{ig}^{\left(t \right)} = \frac{ \eta_{g}^{\left(t \right)}p \left(y_{iA}, y_{iB}, y_{iC}| \theta_{g}^{\left(t \right)} \right)}{\sum_{g=1}^{G} \eta_{g}^{\left(t \right)} p \left(y_{iA},y_{iB},y_{iC} | \theta_{g}^{\left(t \right)} \right)}
+\]
+\[
+\approx \frac{\eta_{g}^{\left(t \right)}p \left(y_{iC}|y_{iA}, y_{iB},\theta_{g}^{\left(t \right)}\right)p\left(y_{iB}|y_{iA},\theta_{g}^{\left(B \right)} \right)p \left(y_{iA}|\theta_{g}^{\left(A \right)} \right)}{\sum_{g=1}^{G} \eta_{g}^{\left(t \right)}p \left(y_{iC}|y_{iA}, y_{iB},\theta_{g}^{\left(t \right)}\right)p\left(y_{iB}|y_{iA},\theta_{g}^{\left(B \right)} \right)p \left(y_{iA}|\theta_{g}^{\left(A \right)} \right)}
+\]
+where:
+\[
+p \left(y_{iC}|y_{iA}, y_{iB},\theta_{g}^{\left(t \right)}\right) \sim MVN \left(\mu_{gC|B}, \Lambda_{gC}^{-1} \right)
+\]
+where
+\begin{align*}
+\mu_{gC|B} &= \mu_{gC} - \Lambda_{gC}^{-1} \Lambda_{gCB} \left(y_{iB}-\mu_{gB} \right)\\
+\Lambda_{gC}^{-1} &= \Sigma_{gC} - \Sigma_{gCB}\Sigma_{gB}^{-1}\Sigma_{gBC} \hspace{5mm} \text{use plug in estimates}
+\end{align*}
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Need to compute the covariances between Batch B and Batch C
+    }%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{M-Step: Maximize}
+
+\[
+l_{c} \left(\theta, \eta | \left(y_{A}, y_{B}, y_{C} \right), z \right)
+\]
+
+to yield
+\begin{align*}
+\eta_g^{\left(t+1\right)} &= \frac{\sum \hat{z}_{ig}^{\left(t \right)}}{N}\\
+\mu_{gC}^{\left(t+1 \right)} &= \frac{\sum \hat{z}_{ig}^{\left(t \right)}y_{iC}}{\sum_{i=1}^{N}\hat{z}_{ig}^{\left(t \right)}}\\
+\Sigma_{gC}^{\left(t+1\right)} &= \frac{\left\{S_{g3}^{\left(t\right)} - S_{g1}^{\left(t \right)^{-1}} S_{g2}^{\left(t \right)^{T}} S_{g2}\right\}}{S_{g1}^{\left(t \right)}}
+\end{align*}
+
+
+where
+\begin{align*}
+S_{g1}^{\left(t \right)} &= \sum \hat{z}_{ig}^{\left(t \right)}\\
+S_{g2}^{\left(t \right)} &= \sum \hat{z}_{ig}^{\left(t \right)} y_{iC}\\
+S_{g3}^{\left(t \right)} &= \sum \hat{z}_{ig}^{\left(t \right)} y_{iC} y_{iC}^{T}
+\end{align*}
+
+Compute
+\[
+p\left(y_{iC} | y_{iA}, y_{iB}, \theta_{g}^{\left(C \right)} \right) \dot{\sim} MVN\left(\mu_{gC|B},\Lambda_{gC}^{-1} \right)
+\]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Convergence}
+
+\[
+\eta_{g}^{\left(C \right)}, \mu_{g}^{\left(C \right)}, \Sigma_{g}^{\left(C \right)}  \hspace{5mm} \&  \hspace{5mm} p\left( y_{iC}| y_{iA}, Y_{iB},\theta_{g}^{\left(C \right)}\right)
+\]
+\noindent\fbox{%
+    \parbox{\textwidth}{%
+Will have estimates for the parameters from this Batch. The probability for this Batch depends on both of the other batches
+    }%
+}
+
+\clearpage
+\end{document}
