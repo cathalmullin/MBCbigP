@@ -1,4 +1,53 @@
-\documentclass[a4paper,12pt]{article}
+\documentclass[a4paper,12pt]{article}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0, 0, 0}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.533,0,0.133}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.667,0.267,0}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{1,0.533,0}{#1}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{\textbf{#1}}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.4,0.067,0.067}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0,0,0.4}{\textbf{#1}}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0,0,0.4}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0,0.267,0.4}{#1}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
 
 \usepackage[margin=0.8in]{geometry}
 \usepackage{natbib}
@@ -54,7 +103,7 @@
 \definecolor{darkcharcoal}{RGB}{38,38,38}
 
 \pagestyle{fancy}
-
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 \begin{document}
 \sectionfont{\color{darkpink}} 
 \chapterfont{\color{darkpink}} 
@@ -108,14 +157,7 @@
 \end{titlepage}
 \newpage
 
-<<include=FALSE>>=
-library(knitr)
-opts_knit$set(out.format = "latex")
-knit_theme$set("edit-vim")
-knit_theme$get()
-thm = knit_theme$get("moe")  # parse the theme to a list
-knit_theme$set(thm)
-@
+
 \thispagestyle{fancy}
 \setcounter{page}{1}
 \pagenumbering{arabic}
@@ -136,16 +178,34 @@ The data set contains six measurements made on 100 genuine and 100 counterfeit o
 
 \section{Mclust}
 \vspace{-0.75cm}
-<<eval=TRUE,message=FALSE,tidy=TRUE>>=
-#incude packages
-library(mclust)
-data(banknote)
-#Ellipsoidal, varying volume, shape, and orientation 
-system.time(res<-Mclust(banknote[,-1],2,"VVV"))
-#assess the classification 
-table(res$cl,banknote[,1])
-#mclust correctly classifies all but one of the observations
-@
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.965, 0.965, 0.965}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# incude packages}
+\hlkwd{library}\hlstd{(mclust)}
+\hlkwd{data}\hlstd{(banknote)}
+\hlcom{# Ellipsoidal, varying volume, shape, and orientation}
+\hlkwd{system.time}\hlstd{(res} \hlkwb{<-} \hlkwd{Mclust}\hlstd{(banknote[,} \hlopt{-}\hlnum{1}\hlstd{],} \hlnum{2}\hlstd{,} \hlstr{"VVV"}\hlstd{))}
+\end{alltt}
+\begin{verbatim}
+##    user  system elapsed 
+##   0.025   0.001   0.027
+\end{verbatim}
+\begin{alltt}
+\hlcom{# assess the classification}
+\hlkwd{table}\hlstd{(res}\hlopt{$}\hlstd{cl, banknote[,} \hlnum{1}\hlstd{])}
+\end{alltt}
+\begin{verbatim}
+##    
+##     counterfeit genuine
+##   1           0      99
+##   2         100       1
+\end{verbatim}
+\begin{alltt}
+\hlcom{# mclust correctly classifies all but one of the observations}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
 \clearpage
 \section{Methodology}
 \subsection{Introduction}
@@ -242,12 +302,16 @@ These are results from working with block matrices. Definition of the conditiona
 Say that the data is divided into three batches A, B \& C
     }%
 }
-<<eval=TRUE,message=FALSE,tidy=TRUE>>=
-#define the batches
-BatchA<-banknote[,2:3]
-BatchB<-banknote[,4:5]
-BatchC<-banknote[,6:7]
-@
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.965, 0.965, 0.965}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# define the batches}
+\hlstd{BatchA} \hlkwb{<-} \hlstd{banknote[,} \hlnum{2}\hlopt{:}\hlnum{3}\hlstd{]}
+\hlstd{BatchB} \hlkwb{<-} \hlstd{banknote[,} \hlnum{4}\hlopt{:}\hlnum{5}\hlstd{]}
+\hlstd{BatchC} \hlkwb{<-} \hlstd{banknote[,} \hlnum{6}\hlopt{:}\hlnum{7}\hlstd{]}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
 
 So for batch A of the variables we have:
 \begin{equation}
@@ -593,6 +657,7 @@ p\left(y_{iC} | y_{iA}, y_{iB}, \theta_{g}^{\left(C \right)} \right) \dot{\sim} 
 \]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Convergence}
+
 \[
 \eta_{g}^{\left(C \right)}, \mu_{g}^{\left(C \right)}, \Sigma_{g}^{\left(C \right)}  \hspace{5mm} \&  \hspace{5mm} p\left( y_{iC}| y_{iA}, Y_{iB},\theta_{g}^{\left(C \right)}\right)
 \]
